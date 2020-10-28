@@ -8,6 +8,9 @@ const taskInput = document.querySelector('#task');
 loadEventListeners();
 
 function loadEventListeners() {
+  // DOM Load event
+  document.addEventListener('DOMContentLoaded', getTasks);
+
   // Add task event
   form.addEventListener('submit', addTask);
 
@@ -21,33 +24,77 @@ function loadEventListeners() {
   filter.addEventListener('keyup', filterTasks);
 }
 
+function getTasksFromLocalStorage() {
+  if (localStorage.getItem('tasks') === null) {
+    return [];
+  } else {
+    return JSON.parse(localStorage.getItem('tasks'));
+  }
+}
+
+function getTasks() {
+  const tasks = getTasksFromLocalStorage();
+
+  tasks.forEach(task => {
+    addTaskToList(task);
+  });
+}
+
+function addTaskToList(text) {
+  const li = document.createElement('li');
+  li.className = 'collection-item';
+  li.appendChild(document.createTextNode(text));
+
+  const link = document.createElement('a');
+  link.className = 'delete-item secondary-content';
+  link.innerHTML = '<i class="fa fa-remove"></i>';
+  li.appendChild(link);
+
+  taskList.appendChild(li);
+}
+
 function addTask(e) {
   if (taskInput.value === '') {
     alert('Add a task');
   }
 
-  const li = document.createElement('li');
-  li.className = 'collection-item';
-  li.appendChild(document.createTextNode(taskInput.value));
+  addTaskToList(taskInput.value);
 
-  const link = document.createElement('a');
-  link.className = 'delete-item secondary-content';
-  link.innerHTML = '<i class="fa fa-remove"></i>';
-  li.appendChild(link)
-
-  taskList.appendChild(li);
+  storeTaskInLocalStorage(taskInput.value);
 
   taskInput.value = '';
 
   e.preventDefault();
 }
 
+function storeTaskInLocalStorage(task) {
+  let tasks = getTasksFromLocalStorage();
+
+  tasks.push(task);
+
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
 function removeTask(e) {
   if (e.target.parentElement.classList.contains('delete-item')) {
     if (confirm('Are you sure?')) {
       e.target.parentElement.parentElement.remove();
+
+      removeTaskFromLocalStorage(e.target.parentElement.parentElement);
     }
   }
+}
+
+function removeTaskFromLocalStorage(taskItem) {
+  let tasks = getTasksFromLocalStorage();
+
+  tasks.forEach((task, index) => {
+    if (taskItem.textContent === task) {
+      tasks.splice(index, 1);
+    }
+  });
+
+  localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
 function clearTasks() {
@@ -59,6 +106,12 @@ function clearTasks() {
   }
 
   // https://jsperf.com/innerhtml-vs-removechild
+
+  clearTasksFromLocalStorage();
+}
+
+function clearTasksFromLocalStorage() {
+  localStorage.clear();
 }
 
 function filterTasks(e) {
